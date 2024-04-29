@@ -1,22 +1,15 @@
-#Download the NPRED package from "https://www.hydrology.unsw.edu.au/download/software/npred" and then install the library
-#install.packages("C:/Users/shubh/Desktop/PIC/NPRED_1.0.1.zip", repos = NULL, type = "win.binary")
+####Loading required Packages####
 setwd("C:/Users/shubh/Desktop/PIC/")
-library(NPRED)
 library(csvread)
 library(readxl)
 library(parallel)
 library(foreach)
 library(doParallel)
+#Download the NPRED package from "https://www.hydrology.unsw.edu.au/download/software/npred" and then install the library
+#install.packages("C:/Users/shubh/Desktop/PIC/NPRED_1.0.1.zip", repos = NULL, type = "win.binary")
+library(NPRED)
 
-####Global Dataset ICRAF
-IP <- read.csv("VNIR.csv")
-#IP <- read.csv("MIR.csv")
-IP=as.data.frame(IP)
-mapping <- c("SiCl" = 1, "Cl" = 2, "SiLo" = 3, "Lo" = 4, "SaLo" = 5, "SiClLo" = 6, 
-             "LoSa" = 7, "Sa" = 8, "Si" = 9, "SaClLo" = 10, "ClLo" = 11, "SaCl" = 12 )
-IP$Texture <- mapping[IP$Texture]
-colnames(IP)
-
+####Defining functions and importing datasets####
 stratified <- function(df, group, size, select = NULL, 
                         replace = FALSE, bothSets = FALSE) {
   if (is.null(select)) {
@@ -79,14 +72,23 @@ stratified <- function(df, group, size, select = NULL,
     set1
   }
 }
-  
+ 
+####Loading dataset####
+##Global Dataset ICRAF
+IP <- read.csv("VNIR.csv")
+#IP <- read.csv("MIR.csv")
+IP=as.data.frame(IP)
+mapping <- c("SiCl" = 1, "Cl" = 2, "SiLo" = 3, "Lo" = 4, "SaLo" = 5, "SiClLo" = 6, 
+             "LoSa" = 7, "Sa" = 8, "Si" = 9, "SaClLo" = 10, "ClLo" = 11, "SaCl" = 12 )
+IP$Texture <- mapping[IP$Texture]
+colnames(IP)
 
+####Parallel Implementation####
 no_cores <- detectCores()
 # Setup cluster
 clust <- makeCluster(no_cores-2) #This line will take time
 registerDoParallel(clust)
 clusterExport(clust, "IP")
-
 
 s = system.time({foo1 = foreach(i=1:10, .combine = c, .packages="NPRED")  %dopar%  
   {stratified <- function(df, group, size, select = NULL, 
@@ -175,14 +177,14 @@ s = system.time({foo1 = foreach(i=1:10, .combine = c, .packages="NPRED")  %dopar
   }
 })
 
-
+####Stop parallel Implementation####
 stopCluster(clust)
 rm(foo1,s)
 stopImplicitCluster()
 
 
 
-
+####ROUGH####
 ##Original without parallel implementation
 #response
 set.seed(1)
